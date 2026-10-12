@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowUpRight, Calendar, Gauge } from "lucide-react";
+import { VehicleImageDisclosure } from "@/components/vehicle-image-disclosure";
 import { StatusBadge } from "@/components/vehicle-status";
 import type { Vehicle } from "@/data/vehicles";
 
@@ -14,7 +15,11 @@ export function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
       >
         <img
           src={vehicle.img}
-          alt={vehicle.nome}
+          alt={
+            vehicle.imagemGeradaPorIA
+              ? `Imagem ilustrativa gerada por IA de ${vehicle.nome}`
+              : vehicle.nome
+          }
           width={800}
           height={500}
           loading="lazy"
@@ -30,6 +35,7 @@ export function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
           </span>
         )}
       </Link>
+      <VehicleImageDisclosure vehicle={vehicle} />
       <div className="flex flex-1 flex-col p-6 lg:p-8">
         <p className="text-[10px] uppercase tracking-[0.25em] text-gold">{vehicle.categoria}</p>
         <h2 className="mt-3 font-display text-3xl leading-tight lining-nums">{vehicle.nome}</h2>

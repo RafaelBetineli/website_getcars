@@ -28,6 +28,7 @@ import heroCarMobileAvif from "@/assets/hero-car-mobile.avif";
 import heroCarMobileWebp from "@/assets/hero-car-mobile.webp";
 import heroCarMobileJpg from "@/assets/hero-car-mobile.jpg";
 import { SiteHeader, SiteFooter } from "@/components/site-chrome";
+import { VehicleImageDisclosure } from "@/components/vehicle-image-disclosure";
 import { StatusBadge } from "@/components/vehicle-status";
 import { INSTAGRAM_URL, whatsappLink } from "@/lib/contact";
 import LightRays from "@/components/LightRays";
@@ -220,7 +221,7 @@ function Index() {
   }, []);
 
   const veiculoDestaque = vehicles.find((v) => v.destaque) ?? vehicles[0];
-  const veiculosGrid = vehicles.filter((v) => v.id !== veiculoDestaque.id);
+  const veiculosGrid = vehicles.filter((v) => v.id !== veiculoDestaque.id && !v.ficticio);
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
@@ -400,7 +401,7 @@ function Index() {
             {/* Featured car */}
             <article className="lg:col-span-7 card-premium card-premium-hover rounded-lg overflow-hidden group flex flex-col">
               <div className="relative aspect-[16/11] overflow-hidden bg-black">
-                <img src={veiculoDestaque.img} alt={veiculoDestaque.nome} loading="lazy" width={1600} height={1100} className="h-full w-full object-cover object-[45%_center] sm:object-center transition-transform duration-[1200ms] group-hover:scale-105" />
+                <img src={veiculoDestaque.img} alt={veiculoDestaque.imagemGeradaPorIA ? `Imagem ilustrativa gerada por IA de ${veiculoDestaque.nome}` : veiculoDestaque.nome} loading="lazy" width={1600} height={1100} className="h-full w-full object-cover object-[45%_center] sm:object-center transition-transform duration-[1200ms] group-hover:scale-105" />
                 <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
                 <div className="absolute top-4 left-4 sm:top-6 sm:left-6">
                   <StatusBadge vehicle={veiculoDestaque} />
@@ -416,6 +417,7 @@ function Index() {
                   <h3 className="font-display text-2xl sm:text-3xl lg:text-5xl lining-nums">{veiculoDestaque.nome}</h3>
                 </div>
               </div>
+              <VehicleImageDisclosure vehicle={veiculoDestaque} />
               <div className="p-8 lg:p-10 flex flex-col lg:flex-row lg:items-center gap-8">
                 <div className="flex-1 min-w-0">
                   <p className="text-gold-soft text-sm tracking-wide mb-4">Valor mediante consulta</p>
@@ -441,12 +443,13 @@ function Index() {
               {veiculosGrid.map((v) => (
                 <article key={v.id} className="card-premium card-premium-hover rounded-lg overflow-hidden group grid grid-cols-1 sm:grid-cols-2">
                   <div className="relative aspect-[16/10] sm:aspect-auto overflow-hidden bg-black">
-                    <img src={v.img} alt={v.nome} loading="lazy" width={800} height={600} className="h-full w-full object-cover object-[55%_center] sm:object-center transition-transform duration-700 group-hover:scale-105" />
+                    <img src={v.img} alt={v.imagemGeradaPorIA ? `Imagem ilustrativa gerada por IA de ${v.nome}` : v.nome} loading="lazy" width={800} height={600} className="h-full w-full object-cover object-[55%_center] sm:object-center transition-transform duration-700 group-hover:scale-105" />
                     <div className="absolute top-3 left-3">
                       <StatusBadge vehicle={v} size="sm" />
                     </div>
                   </div>
                   <div className="p-5 sm:p-6 flex flex-col">
+                    <VehicleImageDisclosure vehicle={v} />
                     <p className="text-[10px] tracking-[0.25em] uppercase text-gold/70 mb-2">{v.categoria}</p>
                     <h3 className="font-display text-xl lg:text-2xl mb-2 leading-tight lining-nums">{v.nome}</h3>
                     <p className="text-gold-soft text-xs tracking-wide mb-4">Valor mediante consulta</p>

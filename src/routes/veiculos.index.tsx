@@ -1,15 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { z } from "zod";
 import { VehicleCard } from "@/components/vehicle-card";
 import { vehicles } from "@/data/vehicles";
-
-const searchSchema = z.object({
-  cat: z.enum(["todos", "esportivos", "suvs", "blindados"]).catch("todos"),
-  sort: z.enum(["ano", "km"]).catch("ano"),
-});
+import { catalogFilters, catalogSearchSchema, selectVehicles } from "@/lib/vehicle-catalog";
 
 export const Route = createFileRoute("/veiculos/")({
-  validateSearch: (search) => searchSchema.parse(search),
+  validateSearch: (search) => catalogSearchSchema.parse(search),
   head: () => ({
     meta: [
       { title: "Veículos disponíveis — GETCARS" },
@@ -29,28 +24,10 @@ export const Route = createFileRoute("/veiculos/")({
   component: VehiclesPage,
 });
 
-const filters = [
-  { value: "todos", label: "Todos" },
-  { value: "esportivos", label: "Esportivos" },
-  { value: "suvs", label: "SUVs" },
-  { value: "blindados", label: "Blindados" },
-] as const;
-
 function VehiclesPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
-  const list = vehicles
-    .filter((vehicle) => {
-      if (search.cat === "esportivos") return vehicle.tipo === "esportivo";
-      if (search.cat === "suvs") return vehicle.tipo === "suv";
-      if (search.cat === "blindados") return vehicle.statusType === "armored";
-      return true;
-    })
-    .sort((a, b) =>
-      search.sort === "ano"
-        ? Number(b.ano) - Number(a.ano)
-        : Number(a.km.replace(/\D/g, "")) - Number(b.km.replace(/\D/g, "")),
-    );
+  const list = selectVehicles(vehicles, search);
 
   return (
     <main className="mx-auto max-w-[1720px] px-6 pb-24 pt-36 md:px-10 lg:px-16 lg:pb-32 lg:pt-44 xl:px-24">
@@ -88,7 +65,7 @@ function VehiclesPage() {
           aria-label="Filtrar veículos por categoria"
           className="flex flex-wrap gap-2"
         >
-          {filters.map((filter) => (
+          {catalogFilters.map((filter) => (
             <button
               key={filter.value}
               type="button"

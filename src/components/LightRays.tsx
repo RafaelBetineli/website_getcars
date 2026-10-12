@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Mesh, Program, Renderer, Triangle } from "ogl";
 
 import "./LightRays.css";
@@ -88,15 +88,17 @@ const getAnchorAndDirection = (origin: RaysOrigin, width: number, height: number
 
 const vertexShader = `
 attribute vec2 position;
-varying vec2 vUv;
 
 void main() {
-  vUv = position * 0.5 + 0.5;
   gl_Position = vec4(position, 0.0, 1.0);
 }`;
 
 const fragmentShader = `
+#ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp float;
+#else
+precision mediump float;
+#endif
 
 uniform float iTime;
 uniform vec2 iResolution;
@@ -114,7 +116,6 @@ uniform float mouseInfluence;
 uniform float noiseAmount;
 uniform float distortion;
 
-varying vec2 vUv;
 
 float noise(vec2 point) {
   return fract(sin(dot(point.xy, vec2(12.9898, 78.233))) * 43758.5453123);
@@ -226,16 +227,19 @@ export default function LightRays({
   className = "",
 }: LightRaysProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const rendererRef = useRef<Renderer | null>(null);
-  const uniformsRef = useRef<LightRaysUniforms | null>(null);
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
   const mouseRef = useRef({ x: 0.5, y: 0.55 });
   const smoothMouseRef = useRef({ x: 0.5, y: 0.55 });
-  const animationFrameRef = useRef<number | null>(null);
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+
+    if (typeof IntersectionObserver === "undefined") {
+      setIsVisible(true);
+      return;
+    }
 
     const observer = new IntersectionObserver(([entry]) => setIsVisible(entry.isIntersecting), {
       threshold: 0.05,
@@ -249,15 +253,25 @@ export default function LightRays({
     const container = containerRef.current;
     if (!container || !isVisible) return;
 
-    const renderer = new Renderer({
-      alpha: true,
-      antialias: false,
-      dpr: Math.min(window.devicePixelRatio, 1.75),
-    });
+    const canvasContainer = canvasContainerRef.current;
+    if (!canvasContainer) return;
+    container.dataset.renderer = "css";
+    let renderer: Renderer;
+    try {
+      renderer = new Renderer({
+        alpha: true,
+        antialias: false,
+        depth: false,
+        dpr: Math.min(window.devicePixelRatio || 1, 1.75),
+      });
+    } catch (error) {
+      console.warn("[LightRays] WebGL indisponível; usando iluminação CSS.", error);
+      return;
+    }
     const { gl } = renderer;
     gl.canvas.style.width = "100%";
     gl.canvas.style.height = "100%";
-    container.replaceChildren(gl.canvas);
+    canvasContainer.replaceChildren(gl.canvas);
 
     const uniforms: LightRaysUniforms = {
       iTime: { value: 0 },
@@ -277,44 +291,71 @@ export default function LightRays({
       distortion: { value: distortion },
     };
 
-    const geometry = new Triangle(gl);
-    const program = new Program(gl, {
-      vertex: vertexShader,
-      fragment: fragmentShader,
-      uniforms,
-      transparent: true,
-      depthTest: false,
-      depthWrite: false,
-    });
-    const mesh = new Mesh(gl, { geometry, program });
+    let geometry: Triangle | undefined;
+    let program: Program | undefined;
+    let mesh: Mesh;
+    let animationFrame: number | null = null;
+    let ready = false;
+    let failed = false;
+    const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let reducedMotion = motionPreference.matches;
+    container.dataset.reducedMotion = String(reducedMotion);
 
-    rendererRef.current = renderer;
-    uniformsRef.current = uniforms;
-
-    const updateSize = () => {
-      const width = container.clientWidth;
-      const height = container.clientHeight;
-      if (!width || !height) return;
-
-      renderer.setSize(width, height);
-      const resolutionWidth = width * renderer.dpr;
-      const resolutionHeight = height * renderer.dpr;
-      const { anchor, direction } = getAnchorAndDirection(
-        raysOrigin,
-        resolutionWidth,
-        resolutionHeight,
-      );
-
-      uniforms.iResolution.value = [resolutionWidth, resolutionHeight];
-      uniforms.rayPos.value = anchor;
-      uniforms.rayDir.value = direction;
+    const stopAnimation = () => {
+      if (animationFrame !== null) cancelAnimationFrame(animationFrame);
+      animationFrame = null;
+    };
+    const activateFallback = (reason: unknown) => {
+      failed = true;
+      stopAnimation();
+      container.dataset.renderer = "css";
+      console.warn("[LightRays] Renderização WebGL interrompida; usando iluminação CSS.", reason);
+    };
+    const releaseResources = () => {
+      if (!gl.isContextLost()) {
+        geometry?.remove();
+        program?.remove();
+        gl.getExtension("WEBGL_lose_context")?.loseContext();
+      }
+      gl.canvas.remove();
     };
 
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const renderFrame = (time: number) => {
-      uniforms.iTime.value = time * 0.001;
+    try {
+      geometry = new Triangle(gl);
+      program = new Program(gl, {
+        vertex: vertexShader,
+        fragment: fragmentShader,
+        uniforms,
+        transparent: true,
+        depthTest: false,
+        depthWrite: false,
+      });
+      if (!gl.getProgramParameter(program.program, gl.LINK_STATUS)) {
+        throw new Error(
+          gl.getProgramInfoLog(program.program) || "Falha ao compilar o shader de luz.",
+        );
+      }
+      mesh = new Mesh(gl, { geometry, program });
+    } catch (error) {
+      activateFallback(error);
+      releaseResources();
+      return;
+    }
 
-      if (followMouse && mouseInfluence > 0) {
+    const scheduleFrame = () => {
+      if (ready && !failed && animationFrame === null) {
+        animationFrame = requestAnimationFrame(renderFrame);
+      }
+    };
+    const renderFrame = (time: number) => {
+      animationFrame = null;
+      if (!ready || failed) return;
+      if (gl.isContextLost()) {
+        activateFallback("Contexto WebGL perdido.");
+        return;
+      }
+      uniforms.iTime.value = reducedMotion ? 0 : time * 0.001;
+      if (!reducedMotion && followMouse && mouseInfluence > 0) {
         const smoothing = 0.94;
         smoothMouseRef.current.x =
           smoothMouseRef.current.x * smoothing + mouseRef.current.x * (1 - smoothing);
@@ -322,32 +363,61 @@ export default function LightRays({
           smoothMouseRef.current.y * smoothing + mouseRef.current.y * (1 - smoothing);
         uniforms.mousePos.value = [smoothMouseRef.current.x, smoothMouseRef.current.y];
       }
-
-      renderer.render({ scene: mesh });
-      if (!prefersReducedMotion) {
-        animationFrameRef.current = requestAnimationFrame(renderFrame);
+      try {
+        renderer.render({ scene: mesh });
+        container.dataset.renderer = "webgl";
+      } catch (error) {
+        activateFallback(error);
+        return;
       }
+      if (!reducedMotion) scheduleFrame();
     };
 
-    const resizeObserver = new ResizeObserver(updateSize);
-    resizeObserver.observe(container);
+    const updateSize = () => {
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      ready = width > 0 && height > 0;
+      if (!ready || failed) {
+        stopAnimation();
+        return;
+      }
+      renderer.setSize(width, height);
+      const resolutionWidth = gl.drawingBufferWidth;
+      const resolutionHeight = gl.drawingBufferHeight;
+      const { anchor, direction } = getAnchorAndDirection(
+        raysOrigin,
+        resolutionWidth,
+        resolutionHeight,
+      );
+      uniforms.iResolution.value = [resolutionWidth, resolutionHeight];
+      uniforms.rayPos.value = anchor;
+      uniforms.rayDir.value = direction;
+      // Resizing clears the canvas. Redraw even when continuous animation is disabled.
+      scheduleFrame();
+    };
+    const onMotionChange = () => {
+      reducedMotion = motionPreference.matches;
+      container.dataset.reducedMotion = String(reducedMotion);
+      stopAnimation();
+      scheduleFrame();
+    };
+    const onContextLost = () => activateFallback("Contexto WebGL perdido.");
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(updateSize) : null;
+    resizeObserver?.observe(container);
+    window.addEventListener("resize", updateSize);
+    motionPreference.addEventListener("change", onMotionChange);
+    gl.canvas.addEventListener("webglcontextlost", onContextLost);
     updateSize();
-    animationFrameRef.current = requestAnimationFrame(renderFrame);
 
     return () => {
-      resizeObserver.disconnect();
-      if (animationFrameRef.current !== null) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
-
-      const loseContext = gl.getExtension("WEBGL_lose_context");
-      loseContext?.loseContext();
-      if (gl.canvas.parentNode === container) {
-        container.removeChild(gl.canvas);
-      }
-      rendererRef.current = null;
-      uniformsRef.current = null;
+      stopAnimation();
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", updateSize);
+      motionPreference.removeEventListener("change", onMotionChange);
+      gl.canvas.removeEventListener("webglcontextlost", onContextLost);
+      releaseResources();
+      container.dataset.renderer = "css";
     };
   }, [
     isVisible,
@@ -383,11 +453,25 @@ export default function LightRays({
     return () => window.removeEventListener("pointermove", handlePointerMove);
   }, [followMouse]);
 
+  const { anchor, direction } = getAnchorAndDirection(raysOrigin, 100, 100);
+  const fallbackStyle = {
+    "--rays-color": /^#[0-9a-f]{6}$/i.test(raysColor) ? raysColor : DEFAULT_COLOR,
+    "--rays-x": `${anchor[0]}%`,
+    "--rays-y": `${anchor[1]}%`,
+    "--rays-angle": `${(Math.atan2(direction[0], -direction[1]) * 180) / Math.PI - 21}deg`,
+  } as CSSProperties;
+
   return (
     <div
       ref={containerRef}
       className={`light-rays-container ${className}`.trim()}
+      data-renderer="css"
+      data-visible={isVisible}
+      style={fallbackStyle}
       aria-hidden="true"
-    />
+    >
+      <div className="light-rays-fallback" />
+      <div ref={canvasContainerRef} className="light-rays-canvas" />
+    </div>
   );
 }

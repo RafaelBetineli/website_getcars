@@ -9,3 +9,58 @@
 .light-rays-container canvas {
   display: block;
 }
+
+.light-rays-canvas,
+.light-rays-fallback {
+  position: absolute;
+  inset: 0;
+}
+
+.light-rays-canvas {
+  visibility: hidden;
+}
+
+.light-rays-container[data-renderer="webgl"] .light-rays-canvas {
+  visibility: visible;
+}
+
+.light-rays-container[data-renderer="webgl"] .light-rays-fallback {
+  display: none;
+}
+
+.light-rays-fallback {
+  opacity: 0.55;
+  background: conic-gradient(
+    from var(--rays-angle) at var(--rays-x) var(--rays-y),
+    transparent 0deg,
+    var(--rays-color) 6deg,
+    transparent 12deg,
+    transparent 18deg,
+    var(--rays-color) 22deg,
+    transparent 28deg,
+    var(--rays-color) 34deg,
+    transparent 42deg
+  );
+  mask-image: radial-gradient(ellipse at var(--rays-x) var(--rays-y), black, transparent 85%);
+  -webkit-mask-image: radial-gradient(
+    ellipse at var(--rays-x) var(--rays-y),
+    black,
+    transparent 85%
+  );
+  transform-origin: var(--rays-x) var(--rays-y);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .light-rays-container[data-visible="true"] .light-rays-fallback {
+    animation: light-rays-sway 12s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes light-rays-sway {
+  from {
+    transform: rotate(-3deg);
+  }
+  to {
+    transform: rotate(3deg);
+  }
+}

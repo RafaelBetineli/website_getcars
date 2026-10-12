@@ -2,6 +2,8 @@ import car1 from "@/assets/car-1.jpg";
 import car2 from "@/assets/car-2.jpg";
 import car3 from "@/assets/car-3.jpg";
 import car4 from "@/assets/car-4.jpg";
+import repasseMercedes from "@/assets/repasse-exemplo-mercedes-c180.png";
+import repasseJeep from "@/assets/repasse-exemplo-jeep-compass.png";
 
 export type VehicleStatusType = "armored" | "factory" | "custom";
 
@@ -12,6 +14,12 @@ export interface Vehicle {
   tipo: "esportivo" | "suv" | "sedan";
   ano: string;
   km: string;
+  /** Modalidade comercial independente da categoria e da blindagem. */
+  repasse?: boolean;
+  /** Anúncio demonstrativo, sem representar um veículo real em estoque. */
+  ficticio?: boolean;
+  /** Marcar quando a imagem do anúncio for gerada por IA. */
+  imagemGeradaPorIA?: boolean;
   statusType: VehicleStatusType;
   statusLabel: string;
   armorLevel?: string;
@@ -82,5 +90,43 @@ export const vehicles: Vehicle[] = [
     destaque: false,
     whatsappMensagem:
       "Olá, GETCARS! Tenho interesse no Nivus GTS blindado e gostaria de receber mais informações.",
+  },
+  {
+    id: "exemplo-repasse-mercedes-c180",
+    nome: "Mercedes-Benz C 180 Avantgarde",
+    categoria: "Sedan premium",
+    tipo: "sedan",
+    ano: "2018",
+    km: "86.000 km",
+    repasse: true,
+    ficticio: true,
+    imagemGeradaPorIA: true,
+    statusType: "factory",
+    statusLabel: "Exemplo fictício",
+    img: repasseMercedes,
+    descricao:
+      "Exemplo fictício de sedan para avaliação do catálogo. Ano e quilometragem demonstrativos; não representa um veículo real em estoque.",
+    destaque: false,
+    whatsappMensagem:
+      "Olá, GETCARS! Estou avaliando o exemplo fictício de repasse Mercedes-Benz C 180 Avantgarde e gostaria de entender como funciona a consulta de veículos.",
+  },
+  {
+    id: "exemplo-repasse-jeep-compass",
+    nome: "Jeep Compass Limited",
+    categoria: "SUV",
+    tipo: "suv",
+    ano: "2019",
+    km: "72.000 km",
+    repasse: true,
+    ficticio: true,
+    imagemGeradaPorIA: true,
+    statusType: "factory",
+    statusLabel: "Exemplo fictício",
+    img: repasseJeep,
+    descricao:
+      "Exemplo fictício de SUV para avaliação do catálogo. Ano e quilometragem demonstrativos; não representa um veículo real em estoque.",
+    destaque: false,
+    whatsappMensagem:
+      "Olá, GETCARS! Estou avaliando o exemplo fictício de repasse Jeep Compass Limited e gostaria de entender como funciona a consulta de veículos.",
   },
 ];

@@ -1,6 +1,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowLeft, MessageCircle } from "lucide-react";
 import { VehicleCard } from "@/components/vehicle-card";
+import { VehicleImageDisclosure } from "@/components/vehicle-image-disclosure";
 import { StatusBadge } from "@/components/vehicle-status";
 import { vehicles } from "@/data/vehicles";
 import { whatsappLink } from "@/lib/contact";
@@ -67,22 +68,29 @@ function VehicleDetail() {
         Ver outros veículos
       </Link>
       <div className="grid items-start gap-8 lg:grid-cols-[1.4fr_1fr] lg:gap-12">
-        <div className="relative overflow-hidden rounded-lg border-gold-subtle bg-black">
-          <img
-            src={vehicle.img}
-            alt={vehicle.nome}
-            width={1200}
-            height={900}
-            fetchPriority="high"
-            className="aspect-[4/3] w-full object-contain"
-          />
-          <div className="absolute left-4 top-4">
-            <StatusBadge vehicle={vehicle} />
+        <div className="overflow-hidden rounded-lg border-gold-subtle bg-black">
+          <div className="relative">
+            <img
+              src={vehicle.img}
+              alt={
+                vehicle.imagemGeradaPorIA
+                  ? `Imagem ilustrativa gerada por IA de ${vehicle.nome}`
+                  : vehicle.nome
+              }
+              width={1200}
+              height={900}
+              fetchPriority="high"
+              className="aspect-[4/3] w-full object-contain"
+            />
+            <div className="absolute left-4 top-4">
+              <StatusBadge vehicle={vehicle} />
+            </div>
           </div>
+          <VehicleImageDisclosure vehicle={vehicle} />
         </div>
         <section>
           <p className="text-[10px] uppercase tracking-[0.3em] text-gold">
-            {vehicle.categoria} · Disponível
+            {vehicle.categoria} · {vehicle.ficticio ? "Exemplo fictício" : "Disponível"}
           </p>
           <h1 className="mt-4 font-display text-5xl leading-tight lining-nums sm:text-6xl">
             {vehicle.nome}
@@ -107,7 +115,7 @@ function VehicleDetail() {
             className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-gold-gradient px-7 py-4 text-sm font-medium text-primary-foreground transition-shadow hover:shadow-[0_0_40px_-8px_var(--gold)]"
           >
             <MessageCircle className="h-4 w-4" />
-            Tenho interesse
+            {vehicle.ficticio ? "Consultar exemplo" : "Tenho interesse"}
           </a>
         </section>
       </div>
