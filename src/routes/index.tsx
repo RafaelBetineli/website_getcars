@@ -5,7 +5,6 @@ import {
   Sparkles,
   Gem,
   Handshake,
-  Menu,
   X,
   Instagram,
   MessageCircle,
@@ -13,8 +12,6 @@ import {
   MapPin,
   Calendar,
   Gauge,
-  Shield,
-  BadgeCheck,
   ClipboardCheck,
   Compass,
   KeyRound,
@@ -30,32 +27,19 @@ import heroCar2560Webp from "@/assets/hero-car-2560.webp";
 import heroCarMobileAvif from "@/assets/hero-car-mobile.avif";
 import heroCarMobileWebp from "@/assets/hero-car-mobile.webp";
 import heroCarMobileJpg from "@/assets/hero-car-mobile.jpg";
-import logo from "@/assets/getcars-logo.png";
+import { SiteHeader, SiteFooter } from "@/components/site-chrome";
+import { StatusBadge } from "@/components/vehicle-status";
+import { INSTAGRAM_URL, whatsappLink } from "@/lib/contact";
 import LightRays from "@/components/LightRays";
-import { vehicles, type Vehicle } from "@/data/vehicles";
+import { vehicles } from "@/data/vehicles";
 
 export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const WHATSAPP_NUMBER = "5511997292805";
-const INSTAGRAM_URL = "https://instagram.com/getcars_/";
 const BADGE = "Revenda Especializada em Veículos Premium";
 const HERO_CAR_AVIF_SRCSET = `${heroCar1280Avif} 1280w, ${heroCar1920Avif} 1920w, ${heroCar2560Avif} 2560w`;
 const HERO_CAR_WEBP_SRCSET = `${heroCar1280Webp} 1280w, ${heroCar1920Webp} 1920w, ${heroCar2560Webp} 2560w`;
-
-function whatsappLink(mensagem?: string) {
-  const base = `https://wa.me/${WHATSAPP_NUMBER}`;
-  return mensagem ? `${base}?text=${encodeURIComponent(mensagem)}` : base;
-}
-
-const nav = [
-  { label: "Início", href: "#inicio" },
-  { label: "Veículos", href: "#veiculos" },
-  { label: "Venda seu veículo", href: "#venda" },
-  { label: "Sobre", href: "#sobre" },
-  { label: "Contato", href: "#contato" },
-];
 
 const jornada = [
   {
@@ -162,30 +146,8 @@ function HeroCarPicture({
   );
 }
 
-function StatusBadge({ vehicle, size = "md" }: { vehicle: Vehicle; size?: "sm" | "md" }) {
-  const Icon = vehicle.statusType === "armored" ? Shield : BadgeCheck;
-  const isSm = size === "sm";
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full bg-background/75 backdrop-blur border-gold-subtle ${
-        isSm ? "px-2.5 py-1" : "px-3.5 py-1.5"
-      }`}
-    >
-      <Icon className={isSm ? "h-3 w-3 text-gold" : "h-3.5 w-3.5 text-gold"} />
-      <span
-        className={`uppercase text-gold ${
-          isSm ? "text-[9px] tracking-wider" : "text-[10px] tracking-[0.25em]"
-        }`}
-      >
-        {vehicle.statusLabel}
-      </span>
-    </span>
-  );
-}
 
 function Index() {
-  const [scrolled, setScrolled] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [comoFuncionaOpen, setComoFuncionaOpen] = useState(false);
   const [comoFuncionaClosing, setComoFuncionaClosing] = useState(false);
   const heroLightingRef = useRef<HTMLDivElement>(null);
@@ -213,12 +175,6 @@ function Index() {
       window.removeEventListener("keydown", onKey);
     };
   }, [comoFuncionaOpen, comoFuncionaClosing]);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   useEffect(() => {
     const lightingLayer = heroLightingRef.current;
@@ -269,47 +225,7 @@ function Index() {
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       {/* HEADER */}
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? "bg-background/80 backdrop-blur-xl border-b border-gold-subtle" : "bg-transparent"}`}>
-        <div className="mx-auto max-w-[1720px] px-6 md:px-10 lg:px-16 xl:px-24">
-          <div className="grid grid-cols-[auto_1fr_auto] items-center h-20 lg:h-24 gap-6">
-            <a href="#inicio" className="flex items-center gap-3 shrink-0">
-              <img src={logo} alt="GETCARS" className="h-11 w-11 object-contain" width={44} height={44} />
-              <span className="font-display text-2xl tracking-[0.28em] text-gold-gradient font-semibold">GETCARS</span>
-            </a>
-
-            <nav className="hidden lg:flex items-center justify-center gap-12">
-              {nav.map((n) => (
-                <a key={n.href} href={n.href} className="text-[13px] text-muted-foreground hover:text-gold transition-colors tracking-[0.15em] uppercase">
-                  {n.label}
-                </a>
-              ))}
-            </nav>
-
-            <a href={whatsappLink()} target="_blank" rel="noopener noreferrer" className="hidden lg:inline-flex items-center gap-2 px-5 py-2.5 rounded-full border-gold-subtle text-gold text-xs uppercase tracking-[0.2em] hover:bg-gold hover:text-primary-foreground transition-all">
-              <MessageCircle className="h-4 w-4" />
-              WhatsApp
-            </a>
-
-            <button onClick={() => setMenuOpen(!menuOpen)} className="lg:hidden text-gold p-2 justify-self-end" aria-label="Menu">
-              {menuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
-          </div>
-
-          {menuOpen && (
-            <div className="lg:hidden pb-6 pt-2 space-y-1 border-t border-gold-subtle">
-              {nav.map((n) => (
-                <a key={n.href} href={n.href} onClick={() => setMenuOpen(false)} className="block px-2 py-3 text-muted-foreground hover:text-gold transition-colors">
-                  {n.label}
-                </a>
-              ))}
-              <a href={whatsappLink()} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gold-gradient text-primary-foreground text-sm font-medium">
-                <MessageCircle className="h-4 w-4" />
-                Falar no WhatsApp
-              </a>
-            </div>
-          )}
-        </div>
-      </header>
+      <SiteHeader home />
 
       {/* HERO */}
       <section id="inicio" className="relative min-h-screen flex items-center overflow-hidden max-md:min-h-svh max-md:items-start">
@@ -386,7 +302,7 @@ function Index() {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 max-md:gap-4">
-                <a href="#veiculos" className="group inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-gold-gradient text-primary-foreground font-medium tracking-wide hover:shadow-[0_0_50px_-5px_var(--gold)] transition-all">
+                <a href="/veiculos" className="group inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-gold-gradient text-primary-foreground font-medium tracking-wide hover:shadow-[0_0_50px_-5px_var(--gold)] transition-all">
                   Ver veículos disponíveis
                   <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </a>
@@ -551,6 +467,11 @@ function Index() {
               ))}
             </div>
           </div>
+          <div className="mt-12 text-center">
+            <a href="/veiculos" className="inline-flex items-center gap-3 rounded-full border-gold-subtle px-8 py-4 text-sm text-gold transition-colors hover:bg-gold hover:text-primary-foreground">
+              Ver todos os veículos <ArrowRight className="h-4 w-4" />
+            </a>
+          </div>
         </div>
       </section>
 
@@ -594,8 +515,7 @@ function Index() {
 
           <div className="flex flex-col sm:flex-row gap-4">
             <a
-              href={whatsappLink("Olá, GETCARS! Gostaria de solicitar uma avaliação para o meu veículo.")}
-              target="_blank" rel="noopener noreferrer"
+              href="/vender"
               className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-gold-gradient text-primary-foreground font-medium tracking-wide hover:shadow-[0_0_50px_-5px_var(--gold)] transition-all"
             >
               Solicitar avaliação
@@ -721,45 +641,7 @@ function Index() {
 
 
       {/* FOOTER */}
-      <footer className="border-t border-gold-subtle bg-surface/60">
-        <div className="mx-auto max-w-[1720px] px-6 md:px-10 lg:px-16 xl:px-24 py-10 lg:py-14">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-16 items-start">
-            <div>
-              <div className="flex items-center gap-3 mb-4">
-                <img src={logo} alt="GETCARS" className="h-9 w-9 object-contain" width={36} height={36} loading="lazy" />
-                <span className="font-display text-lg tracking-[0.28em] text-gold-gradient font-semibold">GETCARS</span>
-              </div>
-              <p className="text-muted-foreground italic font-display text-base leading-relaxed max-w-xs">
-                Veículos premium com qualidade, procedência e exclusividade.
-              </p>
-            </div>
-
-            <div className="md:text-right">
-              <p className="text-[10px] tracking-[0.3em] text-gold uppercase mb-5">Contato</p>
-              <ul className="space-y-2.5 text-sm text-muted-foreground flex flex-col md:items-end">
-                <li>
-                  <a href={whatsappLink()} target="_blank" rel="noopener noreferrer" className="hover:text-gold transition-colors inline-flex items-center gap-2">
-                    <MessageCircle className="h-4 w-4" /> WhatsApp
-                  </a>
-                </li>
-                <li>
-                  <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className="hover:text-gold transition-colors inline-flex items-center gap-2">
-                    <Instagram className="h-4 w-4" /> @getcars_
-                  </a>
-                </li>
-                <li className="inline-flex items-center gap-2">
-                  <MapPin className="h-4 w-4" /> São Paulo, Brasil
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="mt-10 lg:mt-12 pt-6 border-t border-gold-subtle/40 flex flex-col md:flex-row items-center justify-between gap-3 text-[11px] text-muted-foreground tracking-[0.18em]">
-            <p>© {new Date().getFullYear()} GETCARS · Todos os direitos reservados.</p>
-            <p className="uppercase text-gold/70">Qualidade · Procedência · Exclusividade</p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
 
       {/* MODAL: Como funciona a avaliação */}
       {(comoFuncionaOpen || comoFuncionaClosing) && (
@@ -815,8 +697,7 @@ function Index() {
 
               <div className="mt-10 pt-6 border-t border-gold-subtle/50 flex flex-col sm:flex-row gap-3">
                 <a
-                  href={whatsappLink("Olá, GETCARS! Gostaria de solicitar uma avaliação para o meu veículo.")}
-                  target="_blank" rel="noopener noreferrer"
+                  href="/vender"
                   onClick={closeComoFunciona}
                   className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-gold-gradient text-primary-foreground font-medium tracking-wide hover:shadow-[0_0_50px_-5px_var(--gold)] transition-all"
                 >

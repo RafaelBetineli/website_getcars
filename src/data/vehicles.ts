@@ -9,6 +9,7 @@ export interface Vehicle {
   id: string;
   nome: string;
   categoria: string;
+  tipo: "esportivo" | "suv" | "sedan";
   ano: string;
   km: string;
   statusType: VehicleStatusType;
@@ -25,6 +26,7 @@ export const vehicles: Vehicle[] = [
     id: "porsche-911-carrera-t",
     nome: "Porsche 911 Carrera T",
     categoria: "Esportivo · Coleção",
+    tipo: "esportivo",
     ano: "2024",
     km: "7.800 km",
     statusType: "factory",
@@ -39,6 +41,7 @@ export const vehicles: Vehicle[] = [
     id: "suburban-high-country",
     nome: "Suburban High Country",
     categoria: "SUV de Luxo",
+    tipo: "suv",
     ano: "2026",
     km: "ZERO km",
     statusType: "factory",
@@ -53,6 +56,7 @@ export const vehicles: Vehicle[] = [
     id: "bmw-330e",
     nome: "BMW 330e",
     categoria: "Alta performance",
+    tipo: "sedan",
     ano: "2025",
     km: "19.000 km",
     statusType: "factory",
@@ -67,6 +71,7 @@ export const vehicles: Vehicle[] = [
     id: "nivus-gts-blindado",
     nome: "Nivus GTS",
     categoria: "Esportividade urbana",
+    tipo: "suv",
     ano: "2026",
     km: "6.000 km",
     statusType: "armored",
